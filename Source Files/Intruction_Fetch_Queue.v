@@ -24,6 +24,8 @@ output reg	[4*DATA_WIDTH-1:0]	instruction_block_out;
 reg 	[3:0]						enable;
 wire 	[4*DATA_WIDTH-1:0]	Data_out		[3:0];
 
+
+//For to create a fifo regiters with a 128bit width
 genvar i;
 generate
 	for (i=0;i<4;i=i+1) begin: Ins

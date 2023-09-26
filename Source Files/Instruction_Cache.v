@@ -24,7 +24,7 @@ assign Dout_valid     = (ROM_output == {(4*DATA_WIDTH-1){1'b0}}) ? 1'b1 : 1'b0;
 assign invalid_output = {(4*DATA_WIDTH-1){1'b0}};
 assign Dout           = (Abort == 1'b0) ? ROM_output: invalid_output;
 
-
+//Instance for a ROM memory with with enable 
 Single_Port_ROM
 #(
 	.DATA_WIDTH(DATA_WIDTH), 
