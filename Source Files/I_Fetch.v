@@ -41,6 +41,7 @@ wire 	[DATA_WIDTH-1:0]		current_PC_rom;
 wire 	[DATA_WIDTH-1:0]		next_PC_rom;
 wire 	[4*DATA_WIDTH-1:0]	intruction_block_from_rom;
 wire 	[4*DATA_WIDTH-1:0]	current_intruction_block;
+wire 	[1:0]						branch_pc_mux;
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // regs definitions
@@ -60,7 +61,7 @@ assign next_PC 				= (jump_branch_valid == 1'b1) ? jump_branch_address : current
 //If there is a valid jump or branch,
 //then the next rom PC is going to be the jump or branch address
 //else the next rom PC is going to be the current PC rom plus 4 (next 4-instruction block).
-assign next_PC_rom			= (jump_branch_valid == 1'b1) ? jump_branch_address : current_PC_rom + 4;
+assign next_PC_rom			= (jump_branch_valid == 1'b1) ? {jump_branch_address[ADDRESS_WIDTH-1:2],2'b00} : current_PC_rom + 4;
 //Define next write and read pointers. Plus 1 each cycle if allowed by the enable.
 assign next_write_pointer 	= current_write_pointer + 3'b1;
 assign next_read_pointer 	= current_read_pointer + 5'b1;
@@ -87,6 +88,8 @@ assign empty					= (current_read_pointer[4:2] == current_write_pointer) ? 1'b1: 
 //else instruction comes from IFQ.
 assign instruction 			= (empty == 1'b1) ? rom_instruction: IFQ_instruction;
 
+assign branch_pc_mux = current_read_pointer[1:0];
+//function I Cache called
 Instruction_Cache 
 #(
 	.DATA_WIDTH(DATA_WIDTH), 
@@ -98,7 +101,7 @@ I_Cache (
 	.Dout       (intruction_block_from_rom),
 	.Dout_valid (data_invalid)
 );
-
+//function IFQ called
 Intruction_Fetch_Queue 
 #(
 	.DATA_WIDTH(DATA_WIDTH))
@@ -112,21 +115,25 @@ IFQ_Block (
 	.instruction_block_in(intruction_block_from_rom),
 	.instruction_block_out(current_intruction_block)
 );
-
+//Mux before IFQ output, which take IFQ fifo data or direct from ROM when a branch is valid
 always @* begin
-	case (current_read_pointer[1:0])
+	case (branch_pc_mux)
+	//FIFO[31:24] or ROM [31:24] 
 		2'b11: begin	
 			IFQ_instruction = current_intruction_block  [4*DATA_WIDTH-1:3*DATA_WIDTH];
 			rom_instruction = intruction_block_from_rom [4*DATA_WIDTH-1:3*DATA_WIDTH];
 		end 
+		//FIFO[23:16] or ROM [24:16] 
 		2'b10: begin 
 			IFQ_instruction = current_intruction_block  [3*DATA_WIDTH-1:2*DATA_WIDTH];
 			rom_instruction = intruction_block_from_rom [3*DATA_WIDTH-1:2*DATA_WIDTH];
 		end 
+		//FIFO[15:8] or ROM [15:8] 
 		2'b01: begin 
 			IFQ_instruction = current_intruction_block  [2*DATA_WIDTH-1:  DATA_WIDTH];
 			rom_instruction = intruction_block_from_rom [2*DATA_WIDTH-1:  DATA_WIDTH];
 		end 
+		//FIFO[7:0] or ROM [7:0] 
 		2'b00: begin 
 			IFQ_instruction = current_intruction_block  [  DATA_WIDTH-1:0           ];
 			rom_instruction = intruction_block_from_rom [  DATA_WIDTH-1:0           ];

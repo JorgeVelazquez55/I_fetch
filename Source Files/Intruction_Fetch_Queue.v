@@ -24,8 +24,8 @@ output reg	[4*DATA_WIDTH-1:0]	instruction_block_out;
 reg 	[3:0]						enable;
 wire 	[4*DATA_WIDTH-1:0]	Data_out		[3:0];
 
-
-//For to create a fifo regiters with a 128bit width
+//For to create a FIFO, 4 rows(128bits), i integer inidicates the number of row
+//The enable for this Registers in FIFO, come for a one hot.
 genvar i;
 generate
 	for (i=0;i<4;i=i+1) begin: Ins
@@ -43,7 +43,7 @@ generate
 		);
 	end
 endgenerate
-
+//This case is the selecction, basically the number of row
 always @* begin
 	case (selector)
 		2'b00:	instruction_block_out = Data_out[0];
@@ -51,7 +51,7 @@ always @* begin
 		2'b10:	instruction_block_out = Data_out[2];
 		2'b11:	instruction_block_out = Data_out[3];
 	endcase
-	
+//Write pointer, is a one hot whichs enables every row, to write data 128 bits from ROM	
 	case (write_pointer[1:0])
 		2'b00: begin
 			enable[0] = 1'b1;
