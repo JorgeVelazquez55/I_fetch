@@ -21,22 +21,38 @@ module Instruction_Cache
 	Dout_valid
 );
 
+////////////////////////////////////////////////////////////////////////////////////////////
+// Inputs and Outputs definitions
+////////////////////////////////////////////////////////////////////////////////////////////
 input                     		Rd_en;
 input                     		Abort;
 input [(ADDRESS_WIDTH-1):0]	PC_in;
 output [4*DATA_WIDTH-1:0] 		Dout;
 output                    		Dout_valid;
 
+////////////////////////////////////////////////////////////////////////////////////////////
+// wires definitions
+////////////////////////////////////////////////////////////////////////////////////////////
 wire [4*DATA_WIDTH-1:0] ROM_output;
 wire [4*DATA_WIDTH-1:0] invalid_output;
-//Flag to indicates if the output in ROM are zeros, then the flag is high
+////////////////////////////////////////////////////////////////////////////////////////////
+// assignments definitions
+////////////////////////////////////////////////////////////////////////////////////////////
+//Define Data output is valid:
+//If data at the output signal is 0
+//then data is invalid.
 assign Dout_valid     = (ROM_output == {(4*DATA_WIDTH-1){1'b0}}) ? 1'b1 : 1'b0;
-//Register declaration for an invalid data
+//Define an invalid output.
 assign invalid_output = {(4*DATA_WIDTH-1){1'b0}};
-//IF Abort is zero, Dout comes from a ROM, otherwise is invalid.
+//Define output signal Data out:
+//If input signal Abort is asserted,
+//then output data is equal to the invalid output.
+//else output data is the data from ROM.
 assign Dout           = (Abort == 1'b0) ? ROM_output: invalid_output;
 
+////////////////////////////////////////////////////////////////////////////////////////////
 //Instance for a ROM memory with with enable 
+////////////////////////////////////////////////////////////////////////////////////////////
 Single_Port_ROM
 #(
 	.DATA_WIDTH(DATA_WIDTH), 
